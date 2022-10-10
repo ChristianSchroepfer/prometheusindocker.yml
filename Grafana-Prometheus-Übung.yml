@@ -71,31 +71,33 @@ services:
 
   redis:
     image: redis
-    networks:
-      - monitor
     ports:
       - "6379"
 
   db:
-   image: mysql:5.7
-   restart: always
-   environment:
-     MYSQL_DATABASE: 'db'
-     # So you don't have to use root, but you can if you like
-     MYSQL_USER: 'user'
-     # You can use whatever password you like
-     MYSQL_PASSWORD: 'password'
-     # Password for root access
-     MYSQL_ROOT_PASSWORD: 'password'
-   ports:
-        # <Port exposed> : < MySQL Port running inside container>
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
       - '3306:3306'
-   expose:
-     # Opens port 3306 on the container
+    expose:
       - '3306'
-     # Where our data will be persisted
-   volumes:
+    volumes:
       - my-db:/var/lib/mysql
-     # Names our volume
-   networks:
+
+  mysql-exporter:
+    image: prom/mysqld-exporter
+    ports:
+      - 9104:9104
+    networks:
       - monitor
+    environment:
+      - DATA_SOURCE_NAME=root:root@(db:3306)/db
+    depends_on:
+      - db
+    privileged: true
+
